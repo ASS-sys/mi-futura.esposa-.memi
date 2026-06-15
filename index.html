@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Para El Amor De Mi Vida</title>
+    <style>
+        :root {
+            --glow-color: #ff3366;
+            --gold: #ffd700;
+            /* Fondo morado profundo y oscuro */
+            --bg-gradient: linear-gradient(135deg, #06010c 0%, #170422 50%, #020005 100%);
+            --glass: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            perspective: 2000px;
+        }
+
+        /* Canvas de la lluvia interactiva */
+        #canvas-rain {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Contenedor Principal */
+        .universe-container {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100vh;
+        }
+
+        /* Contenedor del sobre */
+        .scene3d {
+            width: 550px;
+            height: 350px;
+            perspective: 1500px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .envelope-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transform: rotateX(15deg) rotateY(-10deg);
+            transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .envelope-wrapper:hover:not(.open) {
+            transform: rotateX(0deg) rotateY(0deg) scale(1.03);
+        }
+
+        /* Estructura del Sobre */
+        .envelope {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(145deg, #cc1144, #880022);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.7), 
+                        inset 0 0 20px rgba(255,50,100,0.3);
+            border-radius: 12px;
+            transform-style: preserve-3d;
+        }
+
+        .envelope::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(145deg, #aa0530, #550011);
+            border-radius: 12px;
+            z-index: 1;
+        }
+
+        /* Solapa superior */
+        .flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-left: 275px solid transparent;
+            border-right: 275px solid transparent;
+            border-top: 195px solid #ff2a5f;
+            transform-origin: top;
+            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1), z-index 0.3s;
+            z-index: 4;
+            filter: drop-shadow(0 8px 10px rgba(0,0,0,0.5));
+        }
+
+        /* Frente del sobre */
+        .pockets {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .left-pocket {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            border-left: 276px solid #bd0938;
+            border-top: 175px solid transparent;
+            border-bottom: 175px solid #bd0938;
+            border-radius: 0 0 0 12px;
+        }
+
+        .right-pocket {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            border-right: 276px solid #bd0938;
+            border-top: 175px solid transparent;
+            border-bottom: 175px solid #bd0938;
+            border-radius: 0 0 12px 0;
+        }
+
+        /* Sello de Corazón */
+        .heart-seal {
+            position: absolute;
+            top: 175px;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70px;
+            height: 70px;
+            background: radial-gradient(circle at 30% 30%, #ff5e8e, #b3002d);
+            border-radius: 50%;
+            z-index: 5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 25px var(--glow-color), 0 10px 20px rgba(0,0,0,0.5);
+            transition: all 0.5s ease;
+        }
+
+        .heart-seal::before {
+            content: '❤';
+            color: #fff;
+            font-size: 32px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.8);
+            animation: beat 1.2s infinite;
+        }
+
+        @keyframes beat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        /* LA CARTA */
+        .letter {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 750px;
+            height: 320px;
+            background: rgba(10, 4, 18, 0.95);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 40px 45px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.6), inset 0 0 30px rgba(255,255,255,0.03);
+            z-index: 2;
+            transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1), height 0.8s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.5s;
+            overflow-y: auto;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .letter::after {
+            content: '';
+            position: absolute;
+            inset: 6px;
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            border-radius: 12px;
+            pointer-events: none;
+        }
+
+        .letter::-webkit-scrollbar { width: 5px; }
+        .letter::-webkit-scrollbar-thumb { background: var(--glow-color); border-radius: 10px; }
+
+        /* Contenido interno */
+        .letter-content {
+            color: #f0f0f5;
+            opacity: 0;
+            transition: opacity 0.5s ease 0.4s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .letter-title {
+            font-family: 'Georgia', serif;
+            font-size: 28px;
+            color: var(--gold);
+            text-align: center;
+            margin-bottom: 25px;
+            text-shadow: 0 0 10px rgba(255,215,0,0.4);
+        }
+
+        .letter-text {
+            font-size: 16px;
+            line-height: 1.9;
+            text-align: justify;
+            margin-bottom: 35px;
+            min-height: 50px;
+        }
+
+        /* Galería Fotográfica en Formato Vertical */
+        .photo-gallery {
+            width: 100%;
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .gallery-title {
+            color: var(--gold);
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .slider-container {
+            width: 280px;
+            height: 400px;
+            overflow: hidden;
+            border-radius: 16px;
+            position: relative;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            border: 1px solid var(--glass-border);
+        }
+
+        .slider {
+            display: flex;
+            width: 300%;
+            height: 100%;
+            animation: slide 12s infinite ease-in-out;
+        }
+
+        .slide {
+            width: 33.33%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* Tus archivos .jpeg en VS Code */
+        .slide:nth-child(1) { background-image: url('foto1.jpeg'); }
+        .slide:nth-child(2) { background-image: url('foto2.jpeg'); }
+        .slide:nth-child(3) { background-image: url('foto3.jpeg'); }
+
+        @keyframes slide {
+            0%, 28% { transform: translateX(0%); }
+            33%, 61% { transform: translateX(-33.33%); }
+            66%, 95% { transform: translateX(-66.66%); }
+            100% { transform: translateX(0%); }
+        }
+
+        /* -------------- ANIMACIONES DE APERTURA -------------- */
+        .envelope-wrapper.open {
+            transform: rotateX(0deg) rotateY(0deg) translateY(140px);
+            cursor: default;
+        }
+
+        .envelope-wrapper.open .flap {
+            transform: rotateX(180deg);
+            z-index: 1;
+        }
+
+        .envelope-wrapper.open .heart-seal {
+            transform: translate(-50%, -180px) scale(0);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .envelope-wrapper.open .letter {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(-50%) translateY(-220px);
+            height: 600px;
+            z-index: 4;
+            box-shadow: 0 35px 75px rgba(0,0,0,0.9), 0 0 50px rgba(255, 51, 102, 0.25);
+        }
+
+        .envelope-wrapper.open .letter-content {
+            opacity: 1;
+        }
+
+        /* Indicador de apertura */
+        .hint-text {
+            position: absolute;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255,255,255,0.7);
+            font-size: 12px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            pointer-events: none;
+            animation: floatHint 2s infinite ease-in-out;
+        }
+        .envelope-wrapper.open .hint-text { opacity: 0; }
+
+        @keyframes floatHint {
+            0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.5; }
+            50% { transform: translateX(-50%) translateY(-10px); opacity: 1; text-shadow: 0 0 10px var(--glow-color); }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas-rain"></canvas>
+
+    <div class="universe-container" id="bgContainer">
+        <div class="scene3d">
+            <div class="envelope-wrapper" id="envelopeWrapper">
+                <div class="flap"></div>
+                
+                <div class="envelope">
+                    <div class="pockets">
+                        <div class="left-pocket"></div>
+                        <div class="right-pocket"></div>
+                    </div>
+                    <div class="heart-seal"></div>
+                </div>
+
+                <div class="letter" id="letter">
+                    <div class="letter-content">
+                        <h2 class="letter-title">Para la persona más especial ❤</h2>
+                        
+                        <div class="letter-text" id="typewriter"></div>
+                        
+                        <div class="photo-gallery">
+                            <span class="gallery-title">Nuestros Momentos de Ayer</span>
+                            <div class="slider-container">
+                                <div class="slider">
+                                    <div class="slide"></div>
+                                    <div class="slide"></div>
+                                    <div class="slide"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hint-text">Toca el corazón de neón</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // TEXTO ACTUALIZADO CON TUS NUEVAS IDEAS ROMÁNTICAS (LÍNEA 255 APROX)
+        const textoCarta = "¡HOLA MI NIÑA PESHOSHA, dueña de mi corazón, amor de mi vida! \n\nQuería salirme por completo de la rutina para recordarte lo infinitamente importante que eres para mí. No tienes idea de cuánto disfruto cada minuto que paso a tu lado; el tiempo se va volando cuando estamos juntos y me fascina ser el novio de una mujer tan linda, admirable e inteligente como tú. Me siento el hombre más afortunado del mundo.\n\nEres mi gran compañera de vida, la persona con la que quiero compartir absolutamente todo y, si Dios nos lo permite, me encantaría casarme contigo en un futuro y construir una vida entera juntos. Eres una niña preciosa a la cual quiero cuidar, proteger y ver feliz siempre, porque ver tu sonrisa es mi mayor alegría. \n\nTus ojos son mis perlas favoritas en todo el universo, tienen una magia que me desarma por completo. A veces, de solo pensar en lo mucho que te amo, me da miedo perderte, porque te has vuelto mi mundo entero, mi lugar seguro y mi felicidad.\n\nGracias por estar en mi vida, mi princesa. Desliza un poquito hacia abajo para que veas nuestras fotos... ¡Te amo con toda mi alma!";
+
+        const wrapper = document.getElementById('envelopeWrapper');
+        const typewriterContent = document.getElementById('typewriter');
+        const bgContainer = document.getElementById('bgContainer');
+        const letterDOM = document.getElementById('letter');
+        let typewritten = false;
+
+        wrapper.addEventListener('click', (e) => {
+            if(wrapper.classList.contains('open') || e.target.closest('.letter')) return; 
+            e.stopPropagation(); 
+            abrirSobre();
+        });
+
+        bgContainer.addEventListener('click', (e) => {
+            if (wrapper.classList.contains('open') && !e.target.closest('.letter')) {
+                wrapper.classList.remove('open');
+            }
+        });
+
+        function abrirSobre() {
+            wrapper.classList.add('open');
+            if(!typewritten) {
+                startTypewriter();
+            }
+        }
+
+        function startTypewriter() {
+            typewritten = true;
+            let index = 0;
+            typewriterContent.innerHTML = "";
+            
+            function type() {
+                if (index < textoCarta.length) {
+                    let char = textoCarta.charAt(index);
+                    if (char === "\n") {
+                        typewriterContent.innerHTML += "<br>";
+                    } else {
+                        typewriterContent.innerHTML += char;
+                    }
+                    index++;
+                    setTimeout(type, 35);
+                }
+            }
+            setTimeout(type, 500);
+        }
+
+        // --- SISTEMA DE LLUVIA DE PARTICULAS BLANCAS Y FLUIDAS ---
+        const canvas = document.getElementById('canvas-rain');
+        const ctx = canvas.getContext('2d');
+        let particlesArray = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height - canvas.height;
+                this.size = Math.random() * 2 + 1;
+                this.speedY = Math.random() * 0.8 + 0.4;
+                this.speedX = (Math.random() - 0.5) * 0.2;
+                this.baseOpacity = Math.random() * 0.5 + 0.4;
+                this.opacity = this.baseOpacity;
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX;
+
+                if (this.y > canvas.height) {
+                    this.y = 0;
+                    this.x = Math.random() * canvas.width;
+                }
+
+                if (wrapper.classList.contains('open')) {
+                    const rect = letterDOM.getBoundingClientRect();
+                    if (this.x > rect.left && this.x < rect.right && this.y > rect.top && this.y < rect.bottom) {
+                        this.opacity = 0.08; 
+                    } else {
+                        this.opacity = this.baseOpacity; 
+                    }
+                } else {
+                    this.opacity = this.baseOpacity;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.shadowBlur = this.opacity > 0.1 ? 4 : 0;
+                ctx.shadowColor = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particlesArray = [];
+            for (let i = 0; i < 100; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.shadowBlur = 0; 
+            
+            particlesArray.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+
+        initParticles();
+        animateParticles();
+    </script>
+</body>
+</html>
